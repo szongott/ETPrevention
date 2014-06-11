@@ -15,7 +15,7 @@
         android:allowBackup="true"
         android:icon="@drawable/evil_twin_study_app_icon"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@android:style/Theme.Holo" >
         <activity
             android:name="de.unihannover.dcsec.eviltwin.prevention.MainActivity"
             android:label="@string/app_name" >

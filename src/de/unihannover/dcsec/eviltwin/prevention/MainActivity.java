@@ -86,8 +86,13 @@ public class MainActivity extends Activity {
 
 	private void updateDisplay() {
 		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-		TextView tvSSID = (TextView) findViewById(R.id.textView5);
-		tvSSID.setText(wifiManager.getConnectionInfo().getSSID());
+
+		TextView tvSSID = (TextView) this.findViewById(R.id.textView5);
+		tvSSID.setText(Utils.trimQuotesFromString(wifiManager
+				.getConnectionInfo().getSSID()));
+
+		TextView tvBSSID = (TextView) this.findViewById(R.id.textView6);
+		tvBSSID.setText(wifiManager.getConnectionInfo().getBSSID());
 	}
 
 	private void startETP() {
