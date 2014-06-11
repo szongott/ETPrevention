@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">EvilTwin Prevention System</string>
+    <string name="action_settings">Settings</string>
+    
+    <string name="title_activity_main">main activity</string>
+    <string name="title_activity_establish_connection">establish connection</string>
+
+</resources>
