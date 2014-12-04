@@ -1,5 +1,7 @@
 package de.unihannover.dcsec.eviltwin.prevention;
 
+import java.util.Iterator;
+
 import android.app.IntentService;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -24,6 +26,12 @@ public class EstablishConnectionService extends IntentService {
 		
 		int netID = intent.getIntExtra("netID", -1);
 		Log.d(TAG, "Connection will be established (netID " + netID + ")");
+		
+		Log.d(TAG, "Configured networks:");
+		Iterator it = wifiManager.getConfiguredNetworks().iterator();
+		while(it.hasNext()) {
+			Log.d(TAG, it.next().toString());
+		}
 		
 		if (netID > -1) {
 			ConnectionWatchDog.getInstance().setAllowConnection(true);
