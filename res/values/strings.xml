@@ -6,5 +6,6 @@
     
     <string name="title_activity_main">main activity</string>
     <string name="title_activity_establish_connection">establish connection</string>
+    <string name="Refresh">Refresh</string>
 
 </resources>

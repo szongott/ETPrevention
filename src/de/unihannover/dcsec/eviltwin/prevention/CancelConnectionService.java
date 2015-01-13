@@ -18,19 +18,21 @@ public class CancelConnectionService extends IntentService {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.d(TAG, "Connection will be canceled");
 		NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		nm.cancel(0);
 		
 		ToastUtils.showToastInUiThread(getApplicationContext(),
-				"Connection canceled");
+				"Connection aborted!");
 		
 		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		wifiManager.disconnect();
 		
+		Log.d(TAG, "Enabling all networks...");
 		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
 			wifiManager.enableNetwork(wc.networkId, false);
 		}
+		
+		Log.d(TAG, "Connection aborted!");
 		stopSelf();
 		return super.onStartCommand(intent, flags, startId);
 	}
