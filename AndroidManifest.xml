@@ -40,6 +40,12 @@
             android:name="de.unihannover.dcsec.eviltwin.prevention.EstablishConnectionService"
             android:label="@string/title_activity_establish_connection" >
         </service>
+
+        <receiver android:name="de.unihannover.dcsec.eviltwin.prevention.NearbyWifisListReceiver" >
+            <intent-filter>
+                <action android:name="android.net.wifi.SCAN_RESULTS" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

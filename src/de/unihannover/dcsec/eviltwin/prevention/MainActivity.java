@@ -8,11 +8,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.telephony.CellLocation;
 import android.telephony.TelephonyManager;
 import android.telephony.gsm.GsmCellLocation;
@@ -30,6 +33,8 @@ import com.google.android.gms.location.LocationClient;
 public class MainActivity extends Activity {
 
 	private static final String TAG = "ETPrevention";
+
+	private final String SCAN_REQUEST_PREFERENCE = "WAITING_FOR_SCAN_RESULTS";
 
 	private static Context mContext = null;
 
@@ -70,13 +75,13 @@ public class MainActivity extends Activity {
 						break;
 					case ASSOCIATED:
 						Log.d(TAG, "State ASSOCIATED recognized...");
-						startETP();
 						break;
 					case AUTHENTICATING:
 						Log.d(TAG, "State AUTHENTICATING recognized...");
 						break;
 					case COMPLETED:
 						Log.d(TAG, "State COMPLETED recognized...");
+						startETP();
 						break;
 					default:
 						break;
@@ -124,27 +129,27 @@ public class MainActivity extends Activity {
 	}
 
 	private void startETP() {
+		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+		notificationManager.cancelAll();
+
 		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 		int netID = wifiManager.getConnectionInfo().getNetworkId();
-		System.out.println(netID);
-
-		// Debugging
-		// Log.d(TAG, "Configured networks:");
-		// Iterator<WifiConfiguration> it =
-		// wifiManager.getConfiguredNetworks().iterator();
-		// while(it.hasNext()) {
-		// Log.d(TAG, it.next().toString());
-		// }
+		// System.out.println(netID);
 
 		// Getting SSID
-		String ssid = wifiManager.getConnectionInfo().getSSID();
+		String ssid = Utils.trimQuotesFromString(wifiManager
+				.getConnectionInfo().getSSID());
 		System.out.println("SSID to connect to: " + ssid);
 
 		// Getting BSSID
 		String bssid = wifiManager.getConnectionInfo().getBSSID();
 		System.out.println("BSSID to connect to: " + bssid);
 
-		// Getting network environment
+		int result = ETPEngine.getInstance().evaluateConnection(ssid, bssid);
+
+		System.out.println("ETPResult=" + result);
+
+
 
 		// Getting CellInfo
 		TelephonyManager telephonyManager = (TelephonyManager) getApplicationContext()
@@ -163,23 +168,25 @@ public class MainActivity extends Activity {
 
 		if (playServicesAvailable == ConnectionResult.SUCCESS) {
 			Log.d(TAG, "Starting PlayServiceLocator...");
-			// startPlayServiceLocator();
+			ETPLocationGrabber.setAppContext(getApplicationContext());
+			try {
+				ETPLocationGrabber.getInstance().saveCurrentLocation();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		} else {
 			Log.d(TAG,
 					"Can not determine position, Google Play Services unavailable..");
 		}
 
-		disableAllNetworksAndDisconnect();
-		showNotification(netID);
+		if (result == 0) {
+			// Do nothing
+		} else {
+			disableAllNetworksAndDisconnect();
+			showNotification(netID, result);
+		}
 
 	}
-
-	// HIER GEHT ES WEITER: LocationGrabbing auslagern, siehe ETSLocationGrabber
-
-	// private void startPlayServiceLocator() {
-	// locationClient = new LocationClient(getApplicationContext(), this, this);
-	// locationClient.connect();
-	// }
 
 	private void disableAllNetworksAndDisconnect() {
 		Log.d(TAG, "Disabling all networks...");
@@ -193,7 +200,8 @@ public class MainActivity extends Activity {
 		wifiManager.disconnect();
 	}
 
-	private void showNotification(int netID) {
+	private void showNotification(int netID, int result) {
+		// result should be used to display the correct warning message
 		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 
 		Intent myCancelServiceIntent = new Intent(mContext,
@@ -231,6 +239,7 @@ public class MainActivity extends Activity {
 				.setContentText(contentText)
 				.setSmallIcon(R.drawable.evil_twin_study_app_icon_96x96)
 				.setTicker(tickerText)
+				.setPriority(Notification.PRIORITY_MAX)
 				// .setContentIntent(pCancelServiceIntent)
 				.setAutoCancel(false)
 				.addAction(R.drawable.icon_ok_48x48, "Verbinden",
@@ -240,6 +249,7 @@ public class MainActivity extends Activity {
 
 		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
+		notificationManager.cancelAll();
 		notificationManager.notify(0, n);
 	}
 
