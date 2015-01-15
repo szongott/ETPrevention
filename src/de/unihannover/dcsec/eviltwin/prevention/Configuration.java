@@ -105,22 +105,16 @@ public class Configuration {
 	// constant to show much too old fixes
 	public static final long MUCH_TOO_OLD = 1000000l;
 
-	// ====================
-	// = HeartbeatService =
-	// ====================
-	public static final long HEARTBEAT_INTERVAL = 30 * 1000; // 30 seconds
+	// =====================
+	// =   Warning Codes   =
+	// =====================
 
-	// ===================
-	// = WelcomeActivity =
-	// ===================
-	public static final int BUTTON_COLOR_LUMINOSITY = 160;
+	public static final int CONNECTION_OK = 0;
+	public static final int UNKNOWN_SSID = -1;
+	public static final int UNKNOWN_BSSID = -2;
+	public static final int UNKNOWN_ENVIRONMENT = -3;
+	
+	
 
-	// ==========
-	// = Survey =
-	// ==========
-	// increment for new submission of results
-	public static final int CURRENT_SURVEY_SUBMISSION_VERSION = 0;
-
-	public static final String PREF_SURVEY = "WLAN Studie Fragebogen";
 
 }

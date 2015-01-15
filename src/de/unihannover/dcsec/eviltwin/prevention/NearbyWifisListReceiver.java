@@ -20,7 +20,7 @@ public class NearbyWifisListReceiver extends BroadcastReceiver {
 
 	public void onReceive(Context context, Intent intent) {
 		SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(context);
+				.getDefaultSharedPreferences(context.getApplicationContext());
 
 		final Editor edit = prefs.edit();
 
@@ -38,6 +38,9 @@ public class NearbyWifisListReceiver extends BroadcastReceiver {
 			wifiList = wifimanager.getScanResults();
 
 			ScanResults wsr = new ScanResults(wifiList);
+			
+			ETPEngine.getInstance().setTemporaryScanResults(wsr);
+			System.out.println("From Receiver: " + ETPEngine.getInstance());
 
 			// TODO: Ergebnis zurückliefern
 //			System.out.println("Aktuelle Umgebung: " + wsr.getAllAPsAsString());

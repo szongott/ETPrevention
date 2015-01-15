@@ -6,7 +6,7 @@ public class ConnectionWatchDog {
 	private boolean allowConnection;
 
 	private ConnectionWatchDog() {
-		allowConnection = false;
+		allowConnection = true;
 	}
 
 	public static ConnectionWatchDog getInstance() {
@@ -20,7 +20,7 @@ public class ConnectionWatchDog {
 		this.allowConnection = ac;
 	}
 
-	public boolean connectionAllowed() {
+	public boolean isConnectionAllowed() {
 		return this.allowConnection;
 	}
 }

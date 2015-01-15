@@ -34,8 +34,6 @@ public class MainActivity extends Activity {
 
 	private static final String TAG = "ETPrevention";
 
-	private final String SCAN_REQUEST_PREFERENCE = "WAITING_FOR_SCAN_RESULTS";
-
 	private static Context mContext = null;
 
 	private Button btnRefresh;
@@ -47,18 +45,12 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		ETPEngine.getInstance().setAppContext(getApplicationContext());
+		System.out.println("From Main: " + ETPEngine.getInstance());
+
 		mContext = this;
-	}
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		// getMenuInflater().inflate(R.menu.main, menu);
-		return true;
-	}
-
-	public void onResume() {
-		super.onResume();
 		BroadcastReceiver wifiStatusReceiver = new BroadcastReceiver() {
 			@Override
 			public void onReceive(Context context, Intent intent) {
@@ -68,30 +60,30 @@ public class MainActivity extends Activity {
 				WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 				supState = wifiInfo.getSupplicantState();
 
-				if (!ConnectionWatchDog.getInstance().connectionAllowed()) {
-					switch (supState) {
-					case ASSOCIATING:
-						Log.d(TAG, "State ASSOCIATING recognized...");
-						break;
-					case ASSOCIATED:
-						Log.d(TAG, "State ASSOCIATED recognized...");
-						break;
-					case AUTHENTICATING:
-						Log.d(TAG, "State AUTHENTICATING recognized...");
-						break;
-					case COMPLETED:
-						Log.d(TAG, "State COMPLETED recognized...");
-						startETP();
-						break;
-					default:
-						break;
-
-					}
-				} else {
+				if (ConnectionWatchDog.getInstance().isConnectionAllowed()) {
 					if (supState.equals(SupplicantState.COMPLETED)) {
 						Log.d(TAG, "Connection allowed");
 						ConnectionWatchDog.getInstance().setAllowConnection(
 								false);
+					} else {
+						switch (supState) {
+						case ASSOCIATING:
+							Log.d(TAG, "State ASSOCIATING recognized...");
+							break;
+						case ASSOCIATED:
+							Log.d(TAG, "State ASSOCIATED recognized...");
+							break;
+						case AUTHENTICATING:
+							Log.d(TAG, "State AUTHENTICATING recognized...");
+							break;
+						case COMPLETED:
+							Log.d(TAG, "State COMPLETED recognized...");
+							startETP();
+							break;
+						default:
+							break;
+
+						}
 					}
 				}
 
@@ -101,8 +93,7 @@ public class MainActivity extends Activity {
 				WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
 		this.registerReceiver(wifiStatusReceiver, filter);
 
-		updateDisplay();
-
+		// Refresh button
 		btnRefresh = (Button) this.findViewById(R.id.refreshButton);
 
 		btnRefreshClickListener = new Button.OnClickListener() {
@@ -115,6 +106,19 @@ public class MainActivity extends Activity {
 
 		btnRefresh.setOnClickListener(btnRefreshClickListener);
 
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		// getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+	public void onResume() {
+		super.onResume();
+
+		updateDisplay();
 	}
 
 	private void updateDisplay() {
@@ -148,8 +152,6 @@ public class MainActivity extends Activity {
 		int result = ETPEngine.getInstance().evaluateConnection(ssid, bssid);
 
 		System.out.println("ETPResult=" + result);
-
-
 
 		// Getting CellInfo
 		TelephonyManager telephonyManager = (TelephonyManager) getApplicationContext()
@@ -186,18 +188,6 @@ public class MainActivity extends Activity {
 			showNotification(netID, result);
 		}
 
-	}
-
-	private void disableAllNetworksAndDisconnect() {
-		Log.d(TAG, "Disabling all networks...");
-		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
-
-		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
-			wifiManager.disableNetwork(wc.networkId);
-		}
-
-		Log.d(TAG, "Disconnecting...");
-		wifiManager.disconnect();
 	}
 
 	private void showNotification(int netID, int result) {
@@ -253,4 +243,15 @@ public class MainActivity extends Activity {
 		notificationManager.notify(0, n);
 	}
 
+	private void disableAllNetworksAndDisconnect() {
+		Log.d(TAG, "Disabling all networks...");
+		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+
+		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
+			wifiManager.disableNetwork(wc.networkId);
+		}
+
+		Log.d(TAG, "Disconnecting...");
+		wifiManager.disconnect();
+	}
 }

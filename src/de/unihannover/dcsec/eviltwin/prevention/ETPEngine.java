@@ -6,12 +6,19 @@ import java.util.HashMap;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class ETPEngine {
 
+	private static final String TAG = "ETPrevention";
+
 	private final String SCAN_REQUEST_PREFERENCE = "WAITING_FOR_SCAN_RESULTS";
+	private Context appContext;
+
+	ScanResults scanResults = null;
 
 	ArrayList<String> knownSSIDs = new ArrayList<String>();
 
@@ -24,6 +31,17 @@ public class ETPEngine {
 			instance = new ETPEngine();
 		}
 		return instance;
+	}
+
+	public void setAppContext(Context context) {
+		this.appContext = context;
+	}
+
+	public Context getAppContext() {
+		if (appContext == null) {
+			new Exception("ETPEngine: AppContext must not be null!");
+		}
+		return appContext;
 	}
 
 	private ETPEngine() {
@@ -56,25 +74,39 @@ public class ETPEngine {
 	public int evaluateConnection(String ssid, String bssid) {
 		// Check if SSID is known
 		if (database.keySet().contains(ssid)) {
+			// Check if BSSID is known
 			if (database.get(ssid).containsKey(bssid)) {
-				return 0;
+				System.out.println("Getting network environment...");
+				startNetworkScan();
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				if (scanResults != null) {
+					System.out.println("ScanResults Size : "
+							+ scanResults.size());
+				} else {
+					System.out.println("ScanResults not ready");
+				}
+				scanResults = null;
+				return Configuration.CONNECTION_OK;
 			} else {
 				// unknown bssid
-				return -2;
+				return Configuration.UNKNOWN_BSSID;
 			}
 		} else {
 			// unknown SSID
-			return -1;
+			return Configuration.UNKNOWN_SSID;
 		}
 	}
 
-	// TODO: HIER GEHT ES WEITER...
-	// Hier wird die Suche der umgebenden Netzwerke angestossen, aber wie kommen
-	// die Ergebnisse zurück in die Engine? Nach einer Lösung suchen und dann
-	// den Algorithmus entsprechend erweitern.
+	public void setTemporaryScanResults(ScanResults sr) {
+		this.scanResults = sr;
+	}
 
-	private void getNetworkEnvironment(Context appContext) {
-		// Getting network environment
+	private void startNetworkScan() {
+		// Starting the WiFi scan
 		WifiManager wifiManager = (WifiManager) appContext
 				.getSystemService(Context.WIFI_SERVICE);
 		SharedPreferences prefs = PreferenceManager
