@@ -1,9 +1,10 @@
 package de.unihannover.dcsec.eviltwin.prevention;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.net.wifi.WifiConfiguration;
@@ -19,10 +20,13 @@ public class ETPEngine {
 	private Context appContext;
 
 	ScanResults scanResults = null;
+	
+	public String learnCandidate_SSID = null;
+	public String learnCandidate_BSSID = null;
 
-	ArrayList<String> knownSSIDs = new ArrayList<String>();
 
-	HashMap<String, HashMap<String, APProfiles>> database = new HashMap<String, HashMap<String, APProfiles>>();
+
+	public boolean connectionEvaluated = false;
 
 	private static ETPEngine instance;
 
@@ -45,59 +49,73 @@ public class ETPEngine {
 	}
 
 	private ETPEngine() {
-		String ssid = "LUHWPA";
-		APProfiles apProfile;
-		String bssid;
-
-		HashMap<String, APProfiles> mapAPProfiles = new HashMap<String, APProfiles>();
-
-		bssid = "00:14:a8:14:43:c3";
-		apProfile = new APProfiles(bssid);
-		mapAPProfiles.put(bssid, apProfile);
-
-		bssid = "40:f4:ec:b2:30:13";
-		apProfile = new APProfiles(bssid);
-		mapAPProfiles.put(bssid, apProfile);
-
-		bssid = "00:0f:f7:eb:08:83";
-		apProfile = new APProfiles(bssid);
-		mapAPProfiles.put(bssid, apProfile);
-
-		bssid = "40:f4:ec:b2:30:1c";
-		apProfile = new APProfiles(bssid);
-		mapAPProfiles.put(bssid, apProfile);
-
-		database.put(ssid, mapAPProfiles);
-
+	}
+	
+	public void clearLearningCandidates() {
+		learnCandidate_SSID = null;
+		learnCandidate_BSSID = null;
 	}
 
-	public int evaluateConnection(String ssid, String bssid) {
+	public void startEvaluatedConnection() {
+		int result = 999;
+
+		WifiManager wifiManager = (WifiManager) appContext
+				.getSystemService(Context.WIFI_SERVICE);
+
+		int netID = wifiManager.getConnectionInfo().getNetworkId();
+		// System.out.println(netID);
+
+		// Getting SSID
+		String ssid = Utils.trimQuotesFromString(wifiManager
+				.getConnectionInfo().getSSID());
+		this.learnCandidate_SSID = ssid;
+		System.out.println("SSID to connect to: " + ssid);
+
+		// Getting BSSID
+		String bssid = wifiManager.getConnectionInfo().getBSSID();
+		this.learnCandidate_BSSID = bssid;
+		System.out.println("BSSID to connect to: " + bssid);
+
+		disableAllNetworksAndDisconnect();
+
 		// Check if SSID is known
-		if (database.keySet().contains(ssid)) {
+		if (KnowledgeDB.getInstance().isSSIDKnown(ssid)) {
 			// Check if BSSID is known
-			if (database.get(ssid).containsKey(bssid)) {
-				System.out.println("Getting network environment...");
-				startNetworkScan();
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				if (scanResults != null) {
-					System.out.println("ScanResults Size : "
-							+ scanResults.size());
-				} else {
-					System.out.println("ScanResults not ready");
-				}
-				scanResults = null;
-				return Configuration.CONNECTION_OK;
+			if (KnowledgeDB.getInstance().isTupleKnown(ssid, bssid)) {
+				// System.out.println("Getting network environment...");
+				// startNetworkScan();
+				// try {
+				// Thread.sleep(2000);
+				// } catch (InterruptedException e) {
+				// e.printStackTrace();
+				// }
+				// if (scanResults != null) {
+				// System.out.println("ScanResults Size : "
+				// + scanResults.size());
+				// } else {
+				// System.out.println("ScanResults not ready");
+				// }
+				// scanResults = null;
+				result = Configuration.CONNECTION_OK;
 			} else {
 				// unknown bssid
-				return Configuration.UNKNOWN_BSSID;
+				result = Configuration.UNKNOWN_BSSID;
 			}
 		} else {
 			// unknown SSID
-			return Configuration.UNKNOWN_SSID;
+			result = Configuration.UNKNOWN_SSID;
+		}
+
+		System.out.println("ETPEngine result : " + result);
+		
+		if (result == Configuration.CONNECTION_OK) {
+			Log.d(TAG, "Enabling network with ID " + netID);
+			wifiManager.enableNetwork(netID, true);
+			wifiManager.reconnect();
+
+			connectionEvaluated = true;
+		} else {
+			showNotification(netID, result);
 		}
 	}
 
@@ -115,6 +133,77 @@ public class ETPEngine {
 		edit.putBoolean(SCAN_REQUEST_PREFERENCE, true);
 		edit.commit();
 		wifiManager.startScan();
+	}
+
+	private void disableAllNetworksAndDisconnect() {
+		Log.d(TAG, "Disabling all networks...");
+		WifiManager wifiManager = (WifiManager) appContext
+				.getSystemService(Context.WIFI_SERVICE);
+
+		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
+			wifiManager.disableNetwork(wc.networkId);
+		}
+
+		Log.d(TAG, "Disconnecting...");
+		wifiManager.disconnect();
+	}
+
+	private void showNotification(int netID, int result) {
+		// result should be used to display the correct warning message
+		WifiManager wifiManager = (WifiManager) appContext
+				.getSystemService(Context.WIFI_SERVICE);
+
+		Intent myCancelServiceIntent = new Intent(appContext,
+				CancelConnectionService.class);
+		PendingIntent pCancelServiceIntent = PendingIntent.getService(
+				appContext, netID, myCancelServiceIntent, 0);
+
+		Intent myOKServiceIntent = new Intent(appContext,
+				EstablishConnectionService.class);
+		// System.out.println(netID);
+		myOKServiceIntent.putExtra("netID", netID);
+		PendingIntent pOKServiceIntent = PendingIntent.getService(appContext,
+				netID, myOKServiceIntent, 0);
+
+		String ssid = "";
+
+		String contentTitle = "New Connection to AP";
+		String contentText = "SSID: " + learnCandidate_SSID;
+		String tickerText = "Connect to network \"" + learnCandidate_SSID + "\"?";
+		
+		switch (result) {
+		case Configuration.UNKNOWN_SSID:
+			contentTitle = "Unknown SSID";
+			break;
+		case Configuration.UNKNOWN_BSSID:
+			contentTitle = "Unknown BSSID";
+			contentText += "\nBSSID: " + learnCandidate_BSSID;
+			break;
+		default:
+			break;
+		}
+		
+
+		// TODO: Older notifications for older androids
+
+		Notification n = new Notification.Builder(appContext)
+				.setContentTitle(contentTitle)
+				.setContentText(contentText)
+				.setSmallIcon(R.drawable.evil_twin_study_app_icon_96x96)
+				.setTicker(tickerText)
+				.setPriority(Notification.PRIORITY_MAX)
+				// .setContentIntent(pCancelServiceIntent)
+				.setAutoCancel(false)
+				.addAction(R.drawable.icon_ok_48x48, "Verbinden",
+						pOKServiceIntent)
+				.addAction(R.drawable.icon_cancel_48x48, "Ablehnen",
+						pCancelServiceIntent).build();
+
+		NotificationManager notificationManager = (NotificationManager) appContext
+				.getSystemService(Context.NOTIFICATION_SERVICE);
+
+		notificationManager.cancelAll();
+		notificationManager.notify(0, n);
 	}
 
 }
