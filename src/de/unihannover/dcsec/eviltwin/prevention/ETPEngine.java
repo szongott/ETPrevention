@@ -1,15 +1,15 @@
 package de.unihannover.dcsec.eviltwin.prevention;
 
+import java.util.List;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class ETPEngine {
@@ -20,11 +20,12 @@ public class ETPEngine {
 	private Context appContext;
 
 	ScanResults scanResults = null;
-	
+
 	public String learnCandidate_SSID = null;
 	public String learnCandidate_BSSID = null;
+	public List<ScanResult> learnCandidate_NetworkEnvironment = null;
 
-
+	private int currentResult = Configuration.ETPCODE_NOT_SET;
 
 	public boolean connectionEvaluated = false;
 
@@ -50,89 +51,77 @@ public class ETPEngine {
 
 	private ETPEngine() {
 	}
-	
-	public void clearLearningCandidates() {
+
+	public void clearLearningCandidatesAndResult() {
 		learnCandidate_SSID = null;
 		learnCandidate_BSSID = null;
+		learnCandidate_NetworkEnvironment = null;
+
+		currentResult = Configuration.ETPCODE_NOT_SET;
 	}
 
 	public void startEvaluatedConnection() {
-		int result = 999;
 
 		WifiManager wifiManager = (WifiManager) appContext
 				.getSystemService(Context.WIFI_SERVICE);
+		wifiManager.startScan();
+
+		Log.d(TAG, "Waiting for network scan...");
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		int netID = wifiManager.getConnectionInfo().getNetworkId();
-		// System.out.println(netID);
 
 		// Getting SSID
 		String ssid = Utils.trimQuotesFromString(wifiManager
 				.getConnectionInfo().getSSID());
 		this.learnCandidate_SSID = ssid;
-		System.out.println("SSID to connect to: " + ssid);
+		Log.d(TAG, "SSID to connect to: " + ssid);
 
 		// Getting BSSID
 		String bssid = wifiManager.getConnectionInfo().getBSSID();
 		this.learnCandidate_BSSID = bssid;
-		System.out.println("BSSID to connect to: " + bssid);
+		Log.d(TAG, "BSSID to connect to: " + bssid);
+
+		// Getting network environment
+		this.learnCandidate_NetworkEnvironment = wifiManager.getScanResults();
 
 		disableAllNetworksAndDisconnect();
 
+		KnowledgeDB kdb = KnowledgeDB.getInstance();
 		// Check if SSID is known
-		if (KnowledgeDB.getInstance().isSSIDKnown(ssid)) {
+		if (kdb.isSSIDKnown(ssid)) {
 			// Check if BSSID is known
-			if (KnowledgeDB.getInstance().isTupleKnown(ssid, bssid)) {
-				// System.out.println("Getting network environment...");
-				// startNetworkScan();
-				// try {
-				// Thread.sleep(2000);
-				// } catch (InterruptedException e) {
-				// e.printStackTrace();
-				// }
-				// if (scanResults != null) {
-				// System.out.println("ScanResults Size : "
-				// + scanResults.size());
-				// } else {
-				// System.out.println("ScanResults not ready");
-				// }
-				// scanResults = null;
-				result = Configuration.CONNECTION_OK;
+			if (kdb.isSSID_BSSIDTupleKnown(ssid, bssid)) {
+				if (learnCandidate_NetworkEnvironment == null)
+					System.out.println("Aaaaaaaaaaaaaaaargh");
+				if (kdb.isNetworkEnvironmentKnown(ssid, bssid,
+						learnCandidate_NetworkEnvironment)) {
+					currentResult = Configuration.ETPCODE_CONNECTION_OK;
+				} else {
+					currentResult = Configuration.ETPCODE_UNKNOWN_ENVIRONMENT;
+				}
 			} else {
 				// unknown bssid
-				result = Configuration.UNKNOWN_BSSID;
+				currentResult = Configuration.ETPCODE_UNKNOWN_BSSID;
 			}
 		} else {
 			// unknown SSID
-			result = Configuration.UNKNOWN_SSID;
+			currentResult = Configuration.ETPCODE_UNKNOWN_SSID;
 		}
 
-		System.out.println("ETPEngine result : " + result);
-		
-		if (result == Configuration.CONNECTION_OK) {
-			Log.d(TAG, "Enabling network with ID " + netID);
-			wifiManager.enableNetwork(netID, true);
-			wifiManager.reconnect();
+		System.out.println("ETPEngine result : " + currentResult);
 
+		if (currentResult == Configuration.ETPCODE_CONNECTION_OK) {
+			connectToSpecificNetwork(netID);
 			connectionEvaluated = true;
 		} else {
-			showNotification(netID, result);
+			showNotification(netID, currentResult);
 		}
-	}
-
-	public void setTemporaryScanResults(ScanResults sr) {
-		this.scanResults = sr;
-	}
-
-	private void startNetworkScan() {
-		// Starting the WiFi scan
-		WifiManager wifiManager = (WifiManager) appContext
-				.getSystemService(Context.WIFI_SERVICE);
-		SharedPreferences prefs = PreferenceManager
-				.getDefaultSharedPreferences(appContext);
-		final Editor edit = prefs.edit();
-		edit.putBoolean(SCAN_REQUEST_PREFERENCE, true);
-		edit.commit();
-		wifiManager.startScan();
 	}
 
 	private void disableAllNetworksAndDisconnect() {
@@ -149,10 +138,6 @@ public class ETPEngine {
 	}
 
 	private void showNotification(int netID, int result) {
-		// result should be used to display the correct warning message
-		WifiManager wifiManager = (WifiManager) appContext
-				.getSystemService(Context.WIFI_SERVICE);
-
 		Intent myCancelServiceIntent = new Intent(appContext,
 				CancelConnectionService.class);
 		PendingIntent pCancelServiceIntent = PendingIntent.getService(
@@ -165,26 +150,24 @@ public class ETPEngine {
 		PendingIntent pOKServiceIntent = PendingIntent.getService(appContext,
 				netID, myOKServiceIntent, 0);
 
-		String ssid = "";
-
 		String contentTitle = "New Connection to AP";
 		String contentText = "SSID: " + learnCandidate_SSID;
-		String tickerText = "Connect to network \"" + learnCandidate_SSID + "\"?";
-		
+		String tickerText = "Connect to network \"" + learnCandidate_SSID
+				+ "\"?";
+
 		switch (result) {
-		case Configuration.UNKNOWN_SSID:
+		case Configuration.ETPCODE_UNKNOWN_SSID:
 			contentTitle = "Unknown SSID";
 			break;
-		case Configuration.UNKNOWN_BSSID:
+		case Configuration.ETPCODE_UNKNOWN_BSSID:
 			contentTitle = "Unknown BSSID";
 			contentText += "\nBSSID: " + learnCandidate_BSSID;
 			break;
+		case Configuration.ETPCODE_UNKNOWN_ENVIRONMENT:
+			contentTitle = "Unknown network environment";
 		default:
 			break;
 		}
-		
-
-		// TODO: Older notifications for older androids
 
 		Notification n = new Notification.Builder(appContext)
 				.setContentTitle(contentTitle)
@@ -204,6 +187,43 @@ public class ETPEngine {
 
 		notificationManager.cancelAll();
 		notificationManager.notify(0, n);
+	}
+
+	private void startLearning() {
+		KnowledgeDB kdb = KnowledgeDB.getInstance();
+
+		switch (currentResult) {
+		case Configuration.ETPCODE_UNKNOWN_SSID:
+			kdb.learnNewAccesspoint(learnCandidate_SSID, learnCandidate_BSSID,
+					learnCandidate_NetworkEnvironment);
+			break;
+		case Configuration.ETPCODE_UNKNOWN_BSSID:
+			kdb.learnNewAccesspoint(learnCandidate_SSID, learnCandidate_BSSID,
+					learnCandidate_NetworkEnvironment);
+			break;
+		case Configuration.ETPCODE_UNKNOWN_ENVIRONMENT:
+			kdb.learnNewEnvironment(learnCandidate_SSID, learnCandidate_BSSID,
+					learnCandidate_NetworkEnvironment);
+		default:
+			break;
+		}
+	}
+
+	private void connectToSpecificNetwork(int netID) {
+		WifiManager wifiManager = (WifiManager) appContext
+				.getSystemService(Context.WIFI_SERVICE);
+		Log.d(TAG, "Enabling network with ID " + netID);
+		wifiManager.enableNetwork(netID, true);
+		wifiManager.reconnect();
+
+		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
+			wifiManager.enableNetwork(wc.networkId, false);
+		}
+	}
+
+	public void userActionConnectionAllowed(int netID) {
+		startLearning();
+		connectToSpecificNetwork(netID);
 	}
 
 }

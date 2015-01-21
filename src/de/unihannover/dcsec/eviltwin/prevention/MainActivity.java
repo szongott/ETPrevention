@@ -24,7 +24,7 @@ import com.google.android.gms.location.LocationClient;
 
 public class MainActivity extends Activity {
 
-	private static final String TAG = "ETPrevention";
+	private static final String TAG = "ETPrevention:Main";
 
 	private Button btnRefresh;
 	private OnClickListener btnRefreshClickListener;
@@ -49,19 +49,21 @@ public class MainActivity extends Activity {
 
 				switch (supState) {
 				case ASSOCIATING:
-					Log.d(TAG, "State ASSOCIATING recognized...");
+					// Log.d(TAG, "State ASSOCIATING recognized...");
 					break;
 				case ASSOCIATED:
-					Log.d(TAG, "State ASSOCIATED recognized...");
+					// Log.d(TAG, "State ASSOCIATED recognized...");
 					break;
 				case AUTHENTICATING:
-					Log.d(TAG, "State AUTHENTICATING recognized...");
+					// Log.d(TAG, "State AUTHENTICATING recognized...");
 					break;
 				case COMPLETED:
 					Log.d(TAG, "State COMPLETED recognized...");
 					if (ETPEngine.getInstance().connectionEvaluated) {
+						Log.d(TAG, "Connection allowed");
 						ETPEngine.getInstance().connectionEvaluated = false;
 					} else {
+						Log.d(TAG, "Starting ETP...");
 						startETP();
 					}
 					break;

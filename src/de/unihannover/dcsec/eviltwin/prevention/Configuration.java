@@ -109,12 +109,19 @@ public class Configuration {
 	// =   Warning Codes   =
 	// =====================
 
-	public static final int CONNECTION_OK = 0;
-	public static final int UNKNOWN_SSID = -1;
-	public static final int UNKNOWN_BSSID = -2;
-	public static final int UNKNOWN_ENVIRONMENT = -3;
+	public static final int ETPCODE_NOT_SET = 999;
+	public static final int ETPCODE_CONNECTION_OK = 0;
+	public static final int ETPCODE_UNKNOWN_SSID = -1;
+	public static final int ETPCODE_UNKNOWN_BSSID = -2;
+	public static final int ETPCODE_UNKNOWN_ENVIRONMENT = -3;
 	
 	
-
-
+	// =====================
+	// =    Other stuff    =
+	// =====================
+	
+	public static double JACCARD_ENVIRONMENT_OK = 0.7;
+	public static double JACCARD_MIN_IMPROVEMENT = 0.7;
+	
+	public static long LEARNING_PHASE_NEW_AP_LENGTH = 7 * 24 * 60 * 60 * 1000;
 }
