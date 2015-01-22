@@ -41,5 +41,9 @@ public class Position {
 	public double getAccuracy() {
 		return accuracy;
 	}
+	
+	public String toString() {
+		return "[" + latitude + "," + longitude + "," + accuracy + "]";
+	}
 
 }

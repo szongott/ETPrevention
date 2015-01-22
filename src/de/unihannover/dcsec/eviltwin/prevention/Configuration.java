@@ -114,6 +114,7 @@ public class Configuration {
 	public static final int ETPCODE_UNKNOWN_SSID = -1;
 	public static final int ETPCODE_UNKNOWN_BSSID = -2;
 	public static final int ETPCODE_UNKNOWN_ENVIRONMENT = -3;
+	public static final int ETPCODE_LOCATION_UNAVAILABLE = -4;
 	
 	
 	// =====================
@@ -124,4 +125,7 @@ public class Configuration {
 	public static double JACCARD_MIN_IMPROVEMENT = 0.7;
 	
 	public static long LEARNING_PHASE_NEW_AP_LENGTH = 7 * 24 * 60 * 60 * 1000;
+	
+	// How great is the distance in which two locations are handled as equal?
+	public static double MAXIMUM_DISTANCE_THRESHOLD = 100.0;
 }

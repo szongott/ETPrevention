@@ -1,15 +1,12 @@
 package de.unihannover.dcsec.eviltwin.prevention;
 
 import android.app.Activity;
-import android.app.Notification;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.SupplicantState;
-import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -121,43 +118,6 @@ public class MainActivity extends Activity {
 		notificationManager.cancelAll();
 
 		ETPEngine.getInstance().startEvaluatedConnection();
-
-		// Getting CellInfo
-		// TelephonyManager telephonyManager = (TelephonyManager)
-		// getApplicationContext()
-		// .getSystemService(Context.TELEPHONY_SERVICE);
-		// CellLocation location = telephonyManager.getCellLocation();
-		// GsmCellLocation gsmLocation = (GsmCellLocation) location;
-		// int cellId = gsmLocation.getCid();
-		// int lac = gsmLocation.getLac();
-		// Log.d(TAG, "CellID: " + cellId + " / lac: " + lac);
-		// System.out.println("Current cellID : " + cellId);
-		// System.out.println("Current LAC : " + lac);
-		//
-		// // Getting Position
-		// final int playServicesAvailable = GooglePlayServicesUtil
-		// .isGooglePlayServicesAvailable(getApplicationContext());
-		//
-		// if (playServicesAvailable == ConnectionResult.SUCCESS) {
-		// Log.d(TAG, "Starting PlayServiceLocator...");
-		// ETPLocationGrabber.setAppContext(getApplicationContext());
-		// try {
-		// ETPLocationGrabber.getInstance().saveCurrentLocation();
-		// } catch (Exception e) {
-		// e.printStackTrace();
-		// }
-		// } else {
-		// Log.d(TAG,
-		// "Can not determine position, Google Play Services unavailable..");
-		// }
-		//
-		// if (result == 0) {
-		// // Do nothing
-		// } else {
-		// disableAllNetworksAndDisconnect();
-		// showNotification(netID, result);
-		// }
-
 	}
 
 }

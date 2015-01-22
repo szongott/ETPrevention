@@ -3,7 +3,6 @@ package fromsimulator;
 import java.util.ArrayList;
 
 import de.unihannover.dcsec.eviltwin.prevention.Configuration;
-import de.unihannover.dcsec.eviltwin.prevention.Utils;
 
 public class AP {
 	private String bssid;
@@ -15,29 +14,17 @@ public class AP {
 
 	private ArrayList<SeenNetworkList> snl;
 
-	private ArrayList<String> cellIDs = new ArrayList<String>();
-	private ArrayList<String> lacs = new ArrayList<String>();
+	private ArrayList<Integer> cellIDs = new ArrayList<Integer>();
+	private ArrayList<Integer> lacs = new ArrayList<Integer>();
 
 	private long firstSeen;
 
-	// public AP(String bssid, Position pos, String capabilities, int frequency)
-	// {
-	// this.bssid = bssid;
-	// this.pos = pos;
-	// // this.capabilities = capabilities;
-	// // this.frequency = frequency;
-	// this.snl = new SeenNetworkList();
-	//
-	// }
-	
-	//Only for development
 	public AP(String bssid) {
 		this.bssid = bssid;
 		this.snl = new ArrayList<SeenNetworkList>();
 	}
 
-	public AP(String bssid, Position pos, long timestamp, String cellID,
-			String lac) {
+	public AP(String bssid, Position pos, long timestamp, int cellID, int lac) {
 		this.bssid = bssid;
 		this.pos = pos;
 		this.firstSeen = timestamp;
@@ -57,6 +44,11 @@ public class AP {
 
 	public void addEnvironment(SeenNetworkList snl) {
 		this.snl.add(snl);
+		environmentReduce();
+	}
+	
+	private void environmentReduce() {
+		//TODO: Remove duplicate entries from SeenNetworklist snl
 	}
 
 	public String getBSSID() {
@@ -68,12 +60,16 @@ public class AP {
 	}
 
 	public void mergeNewPosition(Position pos) {
-		Position newPos = new Position(
-				(this.pos.getLatitude() + pos.getLatitude()) / 2,
-				(this.pos.getLongitude() + pos.getLongitude()) / 2,
-				(this.pos.getAccuracy() + pos.getAccuracy()) / 2);
+		if (this.pos != null) {
+			Position newPos = new Position(
+					(this.pos.getLatitude() + pos.getLatitude()) / 2,
+					(this.pos.getLongitude() + pos.getLongitude()) / 2,
+					(this.pos.getAccuracy() + pos.getAccuracy()) / 2);
 
-		this.pos = newPos;
+			this.pos = newPos;
+		} else {
+			this.pos = pos;
+		}
 	}
 
 	public boolean deleteSeenNet(int profile, String id) {
@@ -98,7 +94,7 @@ public class AP {
 		return 0l;
 	}
 
-	public boolean isCellInfoOK(String cellID, String lac) {
+	public boolean isCellInfoOK(int cellID, int lac) {
 		boolean result = false;
 
 		if (cellIDs.contains(cellID) && lacs.contains(lac)) {
@@ -108,12 +104,14 @@ public class AP {
 		return result;
 	}
 
-	public void improveCellInfo(String cellID, String lac) {
-		if (!cellIDs.contains(cellID)) {
-			cellIDs.add(cellID);
-		}
-		if (!lacs.contains(lac)) {
-			lacs.add(lac);
+	public void addCellInfo(int cellID, int lac) {
+		if ((cellID != -1) && (lac != -1)) {
+			if (!cellIDs.contains(cellID)) {
+				cellIDs.add(cellID);
+			}
+			if (!lacs.contains(lac)) {
+				lacs.add(lac);
+			}
 		}
 	}
 
@@ -179,4 +177,13 @@ public class AP {
 	// }
 	// }
 	// }
+
+	public ArrayList<Integer> getAllCellIDs() {
+		return cellIDs;
+	}
+
+	public ArrayList<Integer> getAllLACs() {
+		return lacs;
+	}
+
 }

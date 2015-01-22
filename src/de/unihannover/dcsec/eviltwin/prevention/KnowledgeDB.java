@@ -5,9 +5,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import fromsimulator.AP;
+import fromsimulator.GeoUtils;
+import fromsimulator.Position;
 import fromsimulator.SeenNetwork;
 import fromsimulator.SeenNetworkList;
 
+import android.location.Location;
 import android.net.wifi.ScanResult;
 import android.util.Log;
 
@@ -120,11 +123,51 @@ public class KnowledgeDB {
 		return false;
 	}
 
+	public boolean isCellInfoKnown(String ssid, String bssid, int cellID,
+			int lac) {
+		// Get list of APs
+		List<AP> apList = db.get(ssid);
+		AP ap = null;
+
+		// Find appropriate AP
+		for (int i = 0; i <= apList.size() - 1; i++) {
+			if (apList.get(i).getBSSID().equals(bssid)) {
+				ap = apList.get(i);
+				break;
+			}
+		}
+
+		if (ap.isCellInfoOK(cellID, lac)) {
+			return true;
+		}
+		return false;
+	}
+
+	public boolean isLocationKnown(String ssid, String bssid, Location loc) {
+
+		// Get list of APs
+		List<AP> apList = db.get(ssid);
+		AP ap = null;
+
+		// Find appropriate AP
+		for (int i = 0; i <= apList.size() - 1; i++) {
+			if (apList.get(i).getBSSID().equals(bssid)) {
+				ap = apList.get(i);
+				break;
+			}
+		}
+
+		return GeoUtils.isDistanceShortEnough(new Position(loc.getLatitude(),
+				loc.getLongitude(), loc.getAccuracy()), ap.getPosition());
+	}
+
 	// LEARNING
-	
+
 	public void learnNewAccesspoint(String ssid, String bssid,
-			List<ScanResult> lsr) {
+			List<ScanResult> lsr, int cellID, int lac, Position pos) {
 		AP ap = new AP(bssid);
+		ap.addCellInfo(cellID, lac);
+		ap.mergeNewPosition(pos);
 		ap.addEnvironment(Utils.convertScanResultsToSNL(lsr));
 
 		if (db.containsKey(ssid)) {
@@ -142,21 +185,82 @@ public class KnowledgeDB {
 		printCompleteKnowledge();
 		ETPEngine.getInstance().clearLearningCandidatesAndResult();
 	}
-	
-	public void learnNewEnvironment(String ssid, String bssid, List<ScanResult> lsr) {
+
+	public void learnNewEnvironment(String ssid, String bssid,
+			List<ScanResult> lsr, int cellID, int lac, Position pos) {
 		List<AP> apList = db.get(ssid);
-		
+
 		// Add environment to appropriate AP
 		for (int i = 0; i <= apList.size() - 1; i++) {
 			if (apList.get(i).getBSSID().equals(bssid)) {
-				apList.get(i).addEnvironment(Utils.convertScanResultsToSNL(lsr));
+				apList.get(i)
+						.addEnvironment(Utils.convertScanResultsToSNL(lsr));
+				apList.get(i).addCellInfo(cellID, lac);
+				apList.get(i).mergeNewPosition(pos);
 				break;
 			}
 		}
-		
-		
-		
-		
+
+	}
+
+	public void improveCellIDAndLAC(String ssid, String bssid, int cellID,
+			int lac) {
+		// Get list of APs
+		List<AP> apList = db.get(ssid);
+		AP ap = null;
+
+		// Find appropriate AP
+		for (int i = 0; i <= apList.size() - 1; i++) {
+			if (apList.get(i).getBSSID().equals(bssid)) {
+				ap = apList.get(i);
+				break;
+			}
+		}
+		ap.addCellInfo(cellID, lac);
+	}
+
+	public void improveNetworkEnvironment(String ssid, String bssid,
+			List<ScanResult> netEnv) {
+		// Get list of APs
+		List<AP> apList = db.get(ssid);
+		AP ap = null;
+
+		// Find appropriate AP
+		for (int i = 0; i <= apList.size() - 1; i++) {
+			if (apList.get(i).getBSSID().equals(bssid)) {
+				ap = apList.get(i);
+				break;
+			}
+		}
+
+		// Construct SeenNetworkList from ScanResults
+		SeenNetworkList currentSNL = new SeenNetworkList();
+		for (ScanResult sr : netEnv) {
+			SeenNetwork sn = new SeenNetwork(sr.SSID, sr.BSSID, sr.level,
+					sr.capabilities, sr.frequency);
+			currentSNL.addNetwork(sn);
+		}
+
+		ap.addEnvironment(currentSNL);
+	}
+
+	public void improveLocation(String ssid, String bssid, Location loc) {
+		// Get list of APs
+		List<AP> apList = db.get(ssid);
+		AP ap = null;
+
+		// Find appropriate AP
+		for (int i = 0; i <= apList.size() - 1; i++) {
+			if (apList.get(i).getBSSID().equals(bssid)) {
+				ap = apList.get(i);
+				break;
+			}
+		}
+
+		// Construct Position from Android Location
+		Position pos = new Position(loc.getLatitude(), loc.getLongitude(),
+				loc.getAccuracy());
+		ap.mergeNewPosition(pos);
 	}
 
 	public void printCompleteKnowledge() {
@@ -171,6 +275,22 @@ public class KnowledgeDB {
 					// System.out.println("    SNL: " + snl);
 					System.out.println("    SNL: " + snl.size());
 				}
+				// CellIDs
+				System.out.print("    CellIDs: ");
+				for (int cellID : ap.getAllCellIDs()) {
+					System.out.print(cellID + " ");
+				}
+				System.out.println();
+
+				// LACs
+				System.out.print("    LACs: ");
+				for (int lac : ap.getAllLACs()) {
+					System.out.print(lac + " ");
+				}
+				System.out.println();
+
+				// Location
+				System.out.println("    Loc:" + ap.getPosition());
 
 			}
 		}

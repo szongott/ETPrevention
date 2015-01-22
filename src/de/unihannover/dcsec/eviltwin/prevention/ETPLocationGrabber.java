@@ -5,7 +5,6 @@ import java.util.UUID;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -51,8 +50,6 @@ public class ETPLocationGrabber implements ConnectionCallbacks,
 				.isGooglePlayServicesAvailable(appcontext);
 
 		if (playServicesAvailable == ConnectionResult.SUCCESS) {
-			if (Configuration.DEBUG_ETS_LOCATION_GRABBER)
-				Log.d(TAG, "Starting PlayServiceLocator...");
 			startPlayServiceLocator();
 		} else {
 			new Exception("Google Play Services not available");
@@ -86,7 +83,9 @@ public class ETPLocationGrabber implements ConnectionCallbacks,
 
 		if (playLoc != null) {
 
-			System.out.println("Current Location: " + playLoc);
+//			System.out.println("Current Location: " + playLoc);
+
+			ETPEngine.getInstance().learnCandidateLocation = playLoc;
 			// System.out.println(System.nanoTime());
 			// System.out.println(playLoc.getElapsedRealtimeNanos());
 			// System.out.println("Age of location: "
