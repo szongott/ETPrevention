@@ -28,6 +28,8 @@ public class ETPEngine {
 	private Context appContext;
 
 	ScanResults scanResults = null;
+	
+	private boolean currentlyConnected = false;
 
 	public String learnCandidate_SSID = null;
 	public String learnCandidate_BSSID = null;
@@ -314,6 +316,18 @@ public class ETPEngine {
 	public void userActionConnectionAllowed(int netID) {
 		startLearning();
 		connectToSpecificNetwork(netID);
+	}
+
+	public void setConnected() {
+		currentlyConnected = true;
+	}
+	
+	public void setUnconnected() {
+		currentlyConnected = false;
+	}
+	
+	public boolean isConnected() {
+		return currentlyConnected;
 	}
 
 }

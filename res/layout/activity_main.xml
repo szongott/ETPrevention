@@ -14,7 +14,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:text="Current connection infos"
+        android:text="Current connection"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <TextView
@@ -26,46 +26,79 @@
         android:text="SSID:" />
 
     <TextView
-        android:id="@+id/textView3"
+        android:id="@+id/textView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/textView2"
         android:layout_below="@+id/textView2"
+        android:text="# Verb. Netzwerk:" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView4"
+        android:layout_below="@+id/textView4"
         android:text="BSSID:" />
 
     <TextView
-        android:id="@+id/textView5"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/textView3"
-        android:layout_centerHorizontal="true"
-        android:text="none" />
-
-    <TextView
-        android:id="@+id/textView6"
+        android:id="@+id/tvCurrentBSSID"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@+id/textView3"
         android:layout_alignBottom="@+id/textView3"
-        android:layout_alignLeft="@+id/textView5"
+        android:layout_alignLeft="@+id/tvCurrentSSID"
+        android:text="none" />
+
+    <TextView
+        android:id="@+id/tvCurrentSSID"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/textView4"
+        android:layout_centerHorizontal="true"
+        android:text="none" />
+
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/textView3"
+        android:layout_below="@+id/textView3"
+        android:text="# Verb. AP:" />
+
+    <TextView
+        android:id="@+id/tvCountConNetwork"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/tvCurrentSSID"
+        android:layout_below="@+id/tvCurrentSSID"
+        android:text="none" />
+
+    <TextView
+        android:id="@+id/tvCountConAP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/textView7"
+        android:layout_alignBottom="@+id/textView7"
+        android:layout_alignLeft="@+id/tvCurrentBSSID"
         android:text="none" />
 
     <Button
         android:id="@+id/refreshButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/textView6"
+        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="43dp"
         android:text="@string/Refresh" />
 
-    <ListView
-        android:id="@+id/listView1"
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/refreshButton"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="30dp" >
-    </ListView>
+        android:layout_alignLeft="@+id/textView7"
+        android:layout_below="@+id/textView7"
+        android:layout_marginTop="22dp"
+        android:text="Statistics"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
 
 </RelativeLayout>

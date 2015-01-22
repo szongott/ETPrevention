@@ -43,6 +43,7 @@ public class MainActivity extends Activity {
 
 				WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 				supState = wifiInfo.getSupplicantState();
+				ETPEngine.getInstance().setUnconnected();
 
 				switch (supState) {
 				case ASSOCIATING:
@@ -59,6 +60,7 @@ public class MainActivity extends Activity {
 					if (ETPEngine.getInstance().connectionEvaluated) {
 						Log.d(TAG, "Connection allowed");
 						ETPEngine.getInstance().connectionEvaluated = false;
+						ETPEngine.getInstance().setConnected();
 					} else {
 						Log.d(TAG, "Starting ETP...");
 						startETP();
@@ -103,14 +105,31 @@ public class MainActivity extends Activity {
 	}
 
 	private void updateDisplay() {
-		WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+		String ssid = "<not connected>";
+		String countNetwork = "<not connected>";
+		String bssid = "<not connected>";
+		String countAP = "<not connected>";
+		if (ETPEngine.getInstance().isConnected()) {
+			WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
+			ssid = Utils.trimQuotesFromString(wifiManager.getConnectionInfo()
+					.getSSID());
+			bssid = wifiManager.getConnectionInfo().getBSSID();
 
-		TextView tvSSID = (TextView) this.findViewById(R.id.textView5);
-		tvSSID.setText(Utils.trimQuotesFromString(wifiManager
-				.getConnectionInfo().getSSID()));
+			// TODO: Hier kommen noch die anderen Werte hin, die initialisiert
+			// werden müssen
+		}
 
-		TextView tvBSSID = (TextView) this.findViewById(R.id.textView6);
-		tvBSSID.setText(wifiManager.getConnectionInfo().getBSSID());
+		TextView tvSSID = (TextView) this.findViewById(R.id.tvCurrentSSID);
+		tvSSID.setText(ssid);
+
+		TextView tvSSIDCount = (TextView) this.findViewById(R.id.tvCountConNetwork);
+		tvSSIDCount.setText(countNetwork);
+		
+		TextView tvBSSID = (TextView) this.findViewById(R.id.tvCurrentBSSID);
+		tvBSSID.setText(bssid);
+		
+		TextView tvBSSIDCount = (TextView) this.findViewById(R.id.tvCountConAP);
+		tvBSSIDCount.setText(countAP);
 	}
 
 	private void startETP() {
