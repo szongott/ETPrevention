@@ -1,4 +1,4 @@
-package de.unihannover.dcsec.eviltwin.prevention;
+package de.unihannover.dcsec.eviltwin.prevention.utils;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -10,10 +10,11 @@ import java.util.Set;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import de.unihannover.dcsec.eviltwin.prevention.data.SeenNetwork;
+import de.unihannover.dcsec.eviltwin.prevention.data.SeenNetworkList;
+
 import android.net.wifi.ScanResult;
 
-import fromsimulator.SeenNetwork;
-import fromsimulator.SeenNetworkList;
 
 public class Utils {
 	public static String trimQuotesFromString(String str) {

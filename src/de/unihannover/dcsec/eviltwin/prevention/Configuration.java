@@ -115,6 +115,8 @@ public class Configuration {
 	public static final int ETPCODE_UNKNOWN_BSSID = -2;
 	public static final int ETPCODE_UNKNOWN_ENVIRONMENT = -3;
 	public static final int ETPCODE_LOCATION_UNAVAILABLE = -4;
+
+	public static final long MAX_TIMESPAN_RECENT_APPROVED_CONNECTION = 5000l;
 	
 	
 	// =====================

@@ -1,7 +1,8 @@
-package fromsimulator;
+package de.unihannover.dcsec.eviltwin.prevention.utils;
 
 import android.util.Log;
 import de.unihannover.dcsec.eviltwin.prevention.Configuration;
+import de.unihannover.dcsec.eviltwin.prevention.data.Position;
 
 public class GeoUtils {
 	private static final boolean DEBUG = false;

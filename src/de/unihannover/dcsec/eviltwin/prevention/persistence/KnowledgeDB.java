@@ -1,14 +1,17 @@
-package de.unihannover.dcsec.eviltwin.prevention;
+package de.unihannover.dcsec.eviltwin.prevention.persistence;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import fromsimulator.AP;
-import fromsimulator.GeoUtils;
-import fromsimulator.Position;
-import fromsimulator.SeenNetwork;
-import fromsimulator.SeenNetworkList;
+import de.unihannover.dcsec.eviltwin.prevention.Configuration;
+import de.unihannover.dcsec.eviltwin.prevention.ETPEngine;
+import de.unihannover.dcsec.eviltwin.prevention.data.AP;
+import de.unihannover.dcsec.eviltwin.prevention.data.Position;
+import de.unihannover.dcsec.eviltwin.prevention.data.SeenNetwork;
+import de.unihannover.dcsec.eviltwin.prevention.data.SeenNetworkList;
+import de.unihannover.dcsec.eviltwin.prevention.utils.GeoUtils;
+import de.unihannover.dcsec.eviltwin.prevention.utils.Utils;
 
 import android.location.Location;
 import android.net.wifi.ScanResult;
@@ -113,7 +116,7 @@ public class KnowledgeDB {
 
 			for (SeenNetworkList snl : listOfSNL) {
 				double jaccard = Utils.calculateJaccardIndex(currentSNL, snl);
-				System.out.println("Jaccard: " + jaccard);
+				// System.out.println("Jaccard: " + jaccard);
 				if (jaccard >= Configuration.JACCARD_ENVIRONMENT_OK) {
 					return true;
 				}
@@ -296,4 +299,26 @@ public class KnowledgeDB {
 		}
 	}
 
+	public int getTotalNetworks() {
+		return db.keySet().size();
+	}
+
+	public int getTotalAPs() {
+		int count = 0;
+		for (String key : db.keySet()) {
+			count += db.get(key).size();
+		}
+		return count;
+	}
+
+	public int getTotalEnvironments() {
+		int count = 0;
+		for (String ssid : db.keySet()) {
+			for (AP ap : db.get(ssid)) {
+				count += ap.getAllEnvironments().size();
+			}
+		}
+		return count;
+
+	}
 }

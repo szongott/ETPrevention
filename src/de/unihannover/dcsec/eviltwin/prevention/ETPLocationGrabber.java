@@ -86,18 +86,7 @@ public class ETPLocationGrabber implements ConnectionCallbacks,
 //			System.out.println("Current Location: " + playLoc);
 
 			ETPEngine.getInstance().learnCandidateLocation = playLoc;
-			// System.out.println(System.nanoTime());
-			// System.out.println(playLoc.getElapsedRealtimeNanos());
-			// System.out.println("Age of location: "
-			// + (long) (System.nanoTime() - playLoc
-			// .getElapsedRealtimeNanos()));
-
-			// TODO: Hier muss das Ergebnis zurückgenommen werden...
-			// MyLogger ml = MyLogger.getInstance(appcontext);
-			//
-			// if (ml.isRecording()) {
-			// ml.setLocation(playLoc);
-			// }
+		
 		} else {
 			new Exception("Something went wrong with Google Play Services...");
 		}

@@ -1,4 +1,4 @@
-package fromsimulator;
+package de.unihannover.dcsec.eviltwin.prevention.data;
 
 import java.util.ArrayList;
 
@@ -43,12 +43,23 @@ public class AP {
 	}
 
 	public void addEnvironment(SeenNetworkList snl) {
-		this.snl.add(snl);
-		environmentReduce();
-	}
-	
-	private void environmentReduce() {
-		//TODO: Remove duplicate entries from SeenNetworklist snl
+		String id = snl.getID();
+		boolean add = true;
+
+		for (SeenNetworkList snList : this.snl) {
+			if (snList.getID().equals(id)) {
+				add = false;
+			}
+		}
+
+		if (add) {
+			this.snl.add(snl);
+		}
+
+		// Only for debugging
+		// for (SeenNetworkList snlist : snl) {
+		// System.out.println(snlist.getID());
+		// }
 	}
 
 	public String getBSSID() {
@@ -89,8 +100,9 @@ public class AP {
 		return "";
 	}
 
+	@Deprecated
 	public long getLastSighting() {
-		// TODO: Look up oldest timestamp from sightings and return it
+		// T O D O: Look up oldest timestamp from sightings and return it
 		return 0l;
 	}
 

@@ -19,7 +19,13 @@ import android.util.Log;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 
-import fromsimulator.Position;
+import de.unihannover.dcsec.eviltwin.prevention.data.Position;
+import de.unihannover.dcsec.eviltwin.prevention.data.ScanResults;
+import de.unihannover.dcsec.eviltwin.prevention.persistence.ConnectionStats;
+import de.unihannover.dcsec.eviltwin.prevention.persistence.KnowledgeDB;
+import de.unihannover.dcsec.eviltwin.prevention.utils.Timer;
+import de.unihannover.dcsec.eviltwin.prevention.utils.Utils;
+
 
 public class ETPEngine {
 
@@ -28,7 +34,7 @@ public class ETPEngine {
 	private Context appContext;
 
 	ScanResults scanResults = null;
-	
+
 	private boolean currentlyConnected = false;
 
 	public String learnCandidate_SSID = null;
@@ -37,6 +43,8 @@ public class ETPEngine {
 	public int learnCandidate_CellID = -999;
 	public int learnCandidate_LAC = -999;
 	public Location learnCandidateLocation;
+
+	private long lastApprovedConnection = 0l;
 
 	private int currentResult = Configuration.ETPCODE_NOT_SET;
 
@@ -77,7 +85,6 @@ public class ETPEngine {
 	}
 
 	public void startEvaluatedConnection() {
-
 		WifiManager wifiManager = (WifiManager) appContext
 				.getSystemService(Context.WIFI_SERVICE);
 		wifiManager.startScan();
@@ -133,7 +140,6 @@ public class ETPEngine {
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -187,12 +193,20 @@ public class ETPEngine {
 			currentResult = Configuration.ETPCODE_UNKNOWN_SSID;
 		}
 
+		Timer.getInstance().stop();
+		System.out.println("Timer delta: " + Timer.getInstance().getDelta());
+		Timer.getInstance().clear();
+		
 		System.out.println("ETPEngine result : " + currentResult);
 
 		// if evaluation is positive
 		if (currentResult == Configuration.ETPCODE_CONNECTION_OK) {
 			connectToSpecificNetwork(netID);
 			connectionEvaluated = true;
+			setConnected();
+			setLastApprovedConnection(System.currentTimeMillis());
+			ConnectionStats.getInstance().incSSIDConnection(ssid);
+			ConnectionStats.getInstance().incAPConnection(bssid);
 		} else {
 			showNotification(netID, currentResult);
 		}
@@ -203,12 +217,15 @@ public class ETPEngine {
 		WifiManager wifiManager = (WifiManager) appContext
 				.getSystemService(Context.WIFI_SERVICE);
 
-		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
-			wifiManager.disableNetwork(wc.networkId);
-		}
+		if (wifiManager.isWifiEnabled()) {
 
-		Log.d(TAG, "Disconnecting...");
-		wifiManager.disconnect();
+			for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
+				wifiManager.disableNetwork(wc.networkId);
+			}
+
+			Log.d(TAG, "Disconnecting...");
+			wifiManager.disconnect();
+		}
 	}
 
 	private void showNotification(int netID, int result) {
@@ -297,19 +314,19 @@ public class ETPEngine {
 		}
 	}
 
-	private void improveCellIDAndLAC() {
-
-	}
-
 	private void connectToSpecificNetwork(int netID) {
 		WifiManager wifiManager = (WifiManager) appContext
 				.getSystemService(Context.WIFI_SERVICE);
-		Log.d(TAG, "Enabling network with ID " + netID);
-		wifiManager.enableNetwork(netID, true);
-		wifiManager.reconnect();
+		if (wifiManager.isWifiEnabled()) {
+			Log.d(TAG, "Enabling network with ID " + netID);
+			wifiManager.enableNetwork(netID, true);
+			wifiManager.reconnect();
 
-		for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
-			wifiManager.enableNetwork(wc.networkId, false);
+			if (wifiManager.getConfiguredNetworks() != null) {
+				for (WifiConfiguration wc : wifiManager.getConfiguredNetworks()) {
+					wifiManager.enableNetwork(wc.networkId, false);
+				}
+			}
 		}
 	}
 
@@ -319,15 +336,32 @@ public class ETPEngine {
 	}
 
 	public void setConnected() {
+//		System.out.println("setConnected called");
 		currentlyConnected = true;
 	}
-	
+
 	public void setUnconnected() {
+//		System.out.println("setUnconnected called");
 		currentlyConnected = false;
 	}
-	
+
 	public boolean isConnected() {
 		return currentlyConnected;
+	}
+
+	private void setLastApprovedConnection(long ts) {
+		this.lastApprovedConnection = ts;
+	}
+
+	public boolean isRecentlyConnected() {
+		long now = System.currentTimeMillis();
+		long maxDelta = Configuration.MAX_TIMESPAN_RECENT_APPROVED_CONNECTION;
+
+		if (now - lastApprovedConnection < maxDelta) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }

@@ -1,7 +1,9 @@
-package de.unihannover.dcsec.eviltwin.prevention;
+package de.unihannover.dcsec.eviltwin.prevention.data;
 
 import java.util.Iterator;
 import java.util.List;
+
+import de.unihannover.dcsec.eviltwin.prevention.utils.Utils;
 
 import android.net.wifi.ScanResult;
 

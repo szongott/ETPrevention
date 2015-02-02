@@ -1,11 +1,13 @@
-package fromsimulator;
+package de.unihannover.dcsec.eviltwin.prevention.data;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import de.unihannover.dcsec.eviltwin.prevention.Configuration;
-import de.unihannover.dcsec.eviltwin.prevention.Utils;
+import de.unihannover.dcsec.eviltwin.prevention.utils.Utils;
 
 
 public class SeenNetworkList implements Iterable<String> {
@@ -98,6 +100,25 @@ public class SeenNetworkList implements Iterable<String> {
 		}
 
 		return str + "]";
+	}
+	
+	public String getID() {
+		List<String> listOfIDs = new ArrayList<String>();
+		String idStr ="";
+		
+		for (String s : networkList.keySet()) {
+			SeenNetwork sn = networkList.get(s);
+			listOfIDs.add(sn.getID());
+		}
+		
+		Collections.sort(listOfIDs);
+		
+		for (String str : listOfIDs) {
+			idStr += str;
+		}
+		
+		return Utils.md5Sub(idStr);
+		
 	}
 
 }

@@ -19,6 +19,11 @@ import android.widget.TextView;
 
 import com.google.android.gms.location.LocationClient;
 
+import de.unihannover.dcsec.eviltwin.prevention.persistence.ConnectionStats;
+import de.unihannover.dcsec.eviltwin.prevention.persistence.KnowledgeDB;
+import de.unihannover.dcsec.eviltwin.prevention.utils.Timer;
+import de.unihannover.dcsec.eviltwin.prevention.utils.Utils;
+
 public class MainActivity extends Activity {
 
 	private static final String TAG = "ETPrevention:Main";
@@ -43,32 +48,32 @@ public class MainActivity extends Activity {
 
 				WifiInfo wifiInfo = wifiManager.getConnectionInfo();
 				supState = wifiInfo.getSupplicantState();
-				ETPEngine.getInstance().setUnconnected();
 
-				switch (supState) {
-				case ASSOCIATING:
-					// Log.d(TAG, "State ASSOCIATING recognized...");
-					break;
-				case ASSOCIATED:
-					// Log.d(TAG, "State ASSOCIATED recognized...");
-					break;
-				case AUTHENTICATING:
-					// Log.d(TAG, "State AUTHENTICATING recognized...");
-					break;
-				case COMPLETED:
-					Log.d(TAG, "State COMPLETED recognized...");
-					if (ETPEngine.getInstance().connectionEvaluated) {
-						Log.d(TAG, "Connection allowed");
-						ETPEngine.getInstance().connectionEvaluated = false;
-						ETPEngine.getInstance().setConnected();
-					} else {
-						Log.d(TAG, "Starting ETP...");
-						startETP();
+				if (wifiManager.isWifiEnabled()) {
+
+					switch (supState) {
+					case ASSOCIATING:
+						// Log.d(TAG, "State ASSOCIATING recognized...");
+						break;
+					case ASSOCIATED:
+						// Log.d(TAG, "State ASSOCIATED recognized...");
+						break;
+					case AUTHENTICATING:
+						// Log.d(TAG, "State AUTHENTICATING recognized...");
+						break;
+					case COMPLETED:
+						Log.d(TAG, "State COMPLETED recognized...");
+						if (ETPEngine.getInstance().connectionEvaluated) {
+							Log.d(TAG, "Connection allowed");
+							ETPEngine.getInstance().connectionEvaluated = false;
+						} else {
+							triggerETP();
+						}
+						break;
+					default:
+						break;
+
 					}
-					break;
-				default:
-					break;
-
 				}
 			}
 		};
@@ -77,6 +82,7 @@ public class MainActivity extends Activity {
 		this.registerReceiver(wifiStatusReceiver, filter);
 
 		// Refresh button
+		
 		btnRefresh = (Button) this.findViewById(R.id.refreshButton);
 
 		btnRefreshClickListener = new Button.OnClickListener() {
@@ -105,38 +111,69 @@ public class MainActivity extends Activity {
 	}
 
 	private void updateDisplay() {
+		//Current connection
 		String ssid = "<not connected>";
 		String countNetwork = "<not connected>";
 		String bssid = "<not connected>";
 		String countAP = "<not connected>";
+		
+		//Statistics
+		String statNetworks = "N/A";
+		String statAPs = "N/A";
+		String statEnvironments = "N/A";
+		
 		if (ETPEngine.getInstance().isConnected()) {
+			//Current connection
 			WifiManager wifiManager = (WifiManager) getSystemService(Context.WIFI_SERVICE);
 			ssid = Utils.trimQuotesFromString(wifiManager.getConnectionInfo()
 					.getSSID());
 			bssid = wifiManager.getConnectionInfo().getBSSID();
-
-			// TODO: Hier kommen noch die anderen Werte hin, die initialisiert
-			// werden müssen
+			
+			countNetwork = String.valueOf(ConnectionStats.getInstance().getSSIDConnections(ssid));
+			countAP = String.valueOf(ConnectionStats.getInstance().getAPConnections(bssid));
+			
 		}
 
 		TextView tvSSID = (TextView) this.findViewById(R.id.tvCurrentSSID);
 		tvSSID.setText(ssid);
 
-		TextView tvSSIDCount = (TextView) this.findViewById(R.id.tvCountConNetwork);
+		TextView tvSSIDCount = (TextView) this
+				.findViewById(R.id.tvCountConNetwork);
 		tvSSIDCount.setText(countNetwork);
-		
+
 		TextView tvBSSID = (TextView) this.findViewById(R.id.tvCurrentBSSID);
 		tvBSSID.setText(bssid);
-		
+
 		TextView tvBSSIDCount = (TextView) this.findViewById(R.id.tvCountConAP);
 		tvBSSIDCount.setText(countAP);
+		
+		//Statistics
+		statNetworks = String.valueOf(KnowledgeDB.getInstance().getTotalNetworks());
+		statAPs = String.valueOf(KnowledgeDB.getInstance().getTotalAPs());
+		statEnvironments = String.valueOf(KnowledgeDB.getInstance().getTotalEnvironments());
+		
+		TextView tvStatNetworks = (TextView) this.findViewById(R.id.tvStatNetworks);
+		tvStatNetworks.setText(statNetworks);
+		TextView tvStatAPs = (TextView) this.findViewById(R.id.tvStatAPs);
+		tvStatAPs.setText(statAPs);
+		TextView tvStatEnvironments = (TextView) this.findViewById(R.id.tvStatEnvironments);
+		tvStatEnvironments.setText(statEnvironments);
+		
+		//set invisible for now
+		this.findViewById(R.id.textView8).setVisibility(View.INVISIBLE);
+		this.findViewById(R.id.tvStatEnvironments).setVisibility(View.INVISIBLE);
 	}
 
-	private void startETP() {
-		NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-		notificationManager.cancelAll();
+	private void triggerETP() {
+		if (!ETPEngine.getInstance().isRecentlyConnected()) {
+			NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+			notificationManager.cancelAll();
 
-		ETPEngine.getInstance().startEvaluatedConnection();
+			ETPEngine.getInstance().setUnconnected();
+			Log.d(TAG, "Starting ETP...");
+			Timer.getInstance().start();
+			ETPEngine.getInstance().startEvaluatedConnection();
+		}
 	}
 
 }

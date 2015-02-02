@@ -1,4 +1,4 @@
-package de.unihannover.dcsec.eviltwin.prevention;
+package de.unihannover.dcsec.eviltwin.prevention.utils;
 
 import android.content.Context;
 import android.os.Handler;

@@ -1,4 +1,4 @@
-package fromsimulator;
+package de.unihannover.dcsec.eviltwin.prevention.data;
 
 public class Position {
 	private double latitude;
